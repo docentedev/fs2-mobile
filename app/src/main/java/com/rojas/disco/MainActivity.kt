@@ -37,21 +37,19 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.rojas.disco.ui.navigation.Destino
-import com.rojas.disco.ui.navigation.composableDestino
-import com.rojas.disco.ui.navigation.navegarA
-import com.rojas.disco.ui.navigation.navegarAPestana
-import com.rojas.disco.ui.screens.LoginScreen
-import com.rojas.disco.ui.screens.ProfileScreen
-import com.rojas.disco.ui.screens.SessionDetailScreen
-import com.rojas.disco.ui.screens.SessionEditScreen
-import com.rojas.disco.ui.screens.SessionScreen
-import com.rojas.disco.ui.screens.StudentHomeScreen
-import com.rojas.disco.ui.screens.StudentQuestionnaireScreen
-import com.rojas.disco.ui.screens.TeacherHomeScreen
-import com.rojas.disco.ui.theme.DiscoTheme
-import com.rojas.disco.ui.viewmodels.SesionRestaurada
-import com.rojas.disco.ui.viewmodels.SesionViewModel
+import com.rojas.disco.core.common.navigation.Destino
+import com.rojas.disco.core.common.navigation.*
+import com.rojas.disco.feature.auth.ui.LoginScreen
+import com.rojas.disco.feature.perfil.ui.ProfileScreen
+import com.rojas.disco.feature.clases.ui.SessionDetailScreen
+import com.rojas.disco.feature.clases.ui.SessionEditScreen
+import com.rojas.disco.feature.clases.ui.SessionScreen
+import com.rojas.disco.feature.asistencia.ui.StudentHomeScreen
+import com.rojas.disco.feature.asistencia.ui.StudentQuestionnaireScreen
+import com.rojas.disco.feature.clases.ui.TeacherHomeScreen
+import com.rojas.disco.core.designsystem.theme.DiscoTheme
+import com.rojas.disco.feature.auth.ui.SesionRestaurada
+import com.rojas.disco.feature.auth.ui.SesionViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint

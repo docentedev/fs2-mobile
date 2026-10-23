@@ -35,7 +35,7 @@
         </activity>
 
         <service
-            android:name=".notification.NotificationService"
+            android:name=".feature.notificaciones.NotificationService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="dataSync" />

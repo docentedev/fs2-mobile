@@ -66,8 +66,8 @@ curl -H "Title: Prueba Disco" \
 
 ## Archivos clave
 
-- `app/src/main/java/com/rojas/disco/notification/NtfyTopics.kt`
-- `app/src/main/java/com/rojas/disco/notification/NotificationService.kt`
+- `app/src/main/java/com/rojas/disco/feature/notificaciones/NtfyTopics.kt`
+- `app/src/main/java/com/rojas/disco/feature/notificaciones/NotificationService.kt`
 - `app/src/main/AndroidManifest.xml` (permisos y servicio)
 - `app/build.gradle.kts` (`NTFY_BASE_URL`)
 EOF

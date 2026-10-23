@@ -271,3 +271,24 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 ### Verificación
 
 - Revisión de documentación; no se modificó código.
+
+---
+
+## [No lanzado] — 2026-10-23
+
+### Plan (migración de paquetes: core/ + feature/, mismo módulo)
+
+- [x] Crear estructura de paquetes `core/*` y `feature/*` (sin dividir Gradle).
+- [x] Mover `notification/*` → `feature/notificaciones/` y actualizar referencias.
+- [x] Mover `ui/theme/*` y `ui/components/*` → `core/designsystem/`.
+- [x] Mover `data/remote/*` → `core/network/remote/` y `core/datastore/`.
+- [x] Mover `data/local/*` → `core/database/local/`.
+- [x] Mover pantallas y ViewModels a su `feature/*` correspondiente.
+- [x] Mover repositorios a `feature/*/data/` y `core/database/repository/`.
+- [x] Actualizar todos los imports y declaraciones de package.
+- [ ] Verificar compilación y recorrido manual.
+
+### Verificación
+- `./gradlew :app:compileDebugKotlin` — OK
+- `./gradlew :app:assembleDebug` — OK
+- `./gradlew :app:testDebugUnitTest` — OK

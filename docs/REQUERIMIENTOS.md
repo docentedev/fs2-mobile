@@ -197,8 +197,10 @@ En una clase universitaria se necesita:
 
 ### 3.1 Incluido en el MVP
 
-- Login por correo electrónico (sin contraseña, modo demo).
-- Roles de Profesor y Estudiante.
+- Login por correo electrónico y contraseña contra una API remota (tokens JWT).
+- Auto-login al abrir la app si los tokens son válidos.
+- Roles de Profesor y Estudiante (decididos por los *groups* del JWT).
+- Home diferenciado por rol.
 - Home diferenciado por rol.
 - CRUD parcial de clases (crear, listar, ver, editar).
 - Inscripción de estudiantes a clases.
@@ -212,8 +214,12 @@ En una clase universitaria se necesita:
 
 ### 3.2 Fuera de alcance del MVP
 
-- Backend, API remota o sincronización.
-- Autenticación real con contraseña, token o biometría.
+- Backend, API remota o sincronización. **(Nota: la solución de referencia
+  actual sí implementa autenticación contra una API remota; el resto del
+  contenido de negocio sigue siendo local-first. Ver sección 17.)**
+- Autenticación real con contraseña, token o biometría. **(Implementada en la
+  solución de referencia actual: login con contraseña + tokens JWT + refresh
+  automático ante 401.)**
 - Recuperación de contraseña.
 - Notificaciones push.
 - Múltiples instituciones o multi-tenant.
@@ -276,28 +282,37 @@ Convención de prioridad:
 - **S** = deseable.
 - **C** = opcional / futura evolución.
 
-### RF-01 — Login por correo
+### RF-01 — Login por correo y contraseña (contra API)
 
 **Prioridad: M**
 
-- La pantalla inicial debe mostrar un campo de correo electrónico.
+- La pantalla inicial debe mostrar un campo de correo electrónico y un campo
+  de contraseña.
 - Debe existir un botón “Ingresar”.
-- Deben existir accesos rápidos para precargar correos demo:
-  - Profesor: `pedro@universidad.edu`
-  - Estudiante: `carmen@estudiantes.edu`
-- Al ingresar, se busca el usuario por email sin distinguir mayúsculas/minúsculas.
-- Si el usuario tiene rol Profesor, se navega al home de profesor.
+- Al ingresar, se valida contra una API remota (`POST api/auth/login`).
+- Si la autenticación es exitosa, se guardan los tokens (`accessToken`,
+  `refreshToken`, `idToken`) en el dispositivo y se decodifica el `idToken`
+  (JWT) para obtener el usuario y sus roles.
+- El usuario se sincroniza con la base local: si no existe, se crea con los
+  roles correspondientes; si la base está vacía, se siembran datos demo.
+- Si el usuario tiene rol Profesor (o Admin), se navega al home de profesor.
 - Si tiene rol Estudiante, se navega al home de estudiante.
 - Si tiene ambos, se prioriza Profesor.
 - Si no tiene ninguno, se muestra un error.
-- Si el email no existe, se pueden crear datos demo (ver RF-02).
-- No se solicita contraseña en el MVP.
-- Debe existir feedback de carga mientras se busca el usuario.
+- Si el email/contraseña son inválidos, la API responde error y la app muestra
+  un mensaje (sin navegar).
+- Debe existir feedback de carga mientras se autentica.
+- La sesión se restaura automáticamente al abrir la app si los tokens son
+  válidos (auto-login).
 
 **Validaciones mínimas:**
 
-- El campo no debe estar vacío.
-- Se debe mostrar un mensaje claro si el usuario no existe o no tiene rol.
+- Correo y contraseña no deben estar vacíos.
+- Se debe mostrar un mensaje claro si las credenciales son inválidas o no hay
+  red.
+
+**Nota de alcance:** esta funcionalidad va más allá del MVP original, que no
+pedía backend ni autenticación real. Ver sección 17.
 
 ### RF-02 — Datos demo iniciales
 
@@ -307,15 +322,15 @@ Cuando no existe información inicial, la app debe poder sembrar:
 
 - Rol `Profesor`.
 - Rol `Estudiante`.
-- Usuario `Pedro` (`pedro@universidad.edu`) con rol Profesor.
-- Usuario `Carmen` (`carmen@estudiantes.edu`) con rol Estudiante.
-- Clase `Primer Curso`, del profesor Pedro.
-- Inscripción de Carmen en esa clase.
-- Asistencia inicial de Carmen como presente, con respuestas de ejemplo.
+- Usuario `Docente Demo` (`docente.dev@gmail.com`) con rol Profesor.
+- Clase `Primer Curso`, del profesor Docente Demo.
+- Usuario `Estudiante Demo` (`demo@estudiante.edu`) con rol Estudiante.
+- Inscripción del estudiante demo en esa clase.
+- Asistencia inicial del estudiante demo como presente, con respuestas de ejemplo.
 
 **Regla de implementación:** el sembrado no debe ejecutarse en cada login. Solo
-cuando falten los datos base. Para una app real, mover esta lógica a un
-`Seeder` o a un entorno de debug.
+cuando falten los datos base (base de datos vacía). Para una app real, mover
+esta lógica a un `Seeder` o a un entorno de debug.
 
 ### RF-03 — Home del profesor
 
@@ -712,7 +727,7 @@ colores y la tipografía son libres; se recomienda:
 
 - No debe haber crashes por QR inválido, email inexistente o lista vacía.
 - La app debe mantener la consistencia ante recreación de actividad
-  (deseable; el MVP actual pierde el usuario de sesión en memoria).
+  (deseable; la referencia ya restaura la sesión desde los tokens).
 - Las reglas de negocio críticas deben poder testearse.
 - El código debe separar claramente pantallas, componentes, navegación y datos.
 
@@ -727,8 +742,8 @@ es que el flujo se pueda demostrar de punta a punta.
 ### CA-01 — Login de profesor
 
 ```gherkin
-Dado que existe el usuario Pedro con rol Profesor
-Cuando ingreso "pedro@universidad.edu" y presiono "Ingresar"
+Dado que existe el usuario docente.dev@gmail.com con rol Profesor
+Cuando ingreso el correo y la contraseña y presiono "Ingresar"
 Entonces veo el home de profesor
 Y veo la clase "Primer Curso"
 Y puedo acceder a mis clases y a mi perfil
@@ -737,8 +752,8 @@ Y puedo acceder a mis clases y a mi perfil
 ### CA-02 — Login de estudiante
 
 ```gherkin
-Dado que existe la usuario Carmen con rol Estudiante
-Cuando ingreso "carmen@estudiantes.edu" y presiono "Ingresar"
+Dado que existe el usuario demo@estudiante.edu con rol Estudiante
+Cuando ingreso el correo y la contraseña y presiono "Ingresar"
 Entonces veo el home de estudiante
 Y veo la clase "Primer Curso"
 Y la tarjeta indica PRESENTE
@@ -859,13 +874,13 @@ Entonces la clase sigue apareciendo en la lista
 
 | Dato | Valor |
 |---|---|
-| Profesor | Pedro — `pedro@universidad.edu` |
-| Estudiante | Carmen — `carmen@estudiantes.edu` |
+| Profesor | Docente Demo — `docente.dev@gmail.com` |
+| Estudiante | Estudiante Demo — `demo@estudiante.edu` |
 | Roles | `Profesor`, `Estudiante` |
 | Clase | `Primer Curso` |
 | Descripción | `Curso de prueba de persistencia local` |
 | Cuestionario | `{"preguntas":["¿Asististe a la clase?","¿Qué aprendiste hoy?"]}` |
-| Asistencia de Carmen | Presente, con respuestas de ejemplo |
+| Asistencia del estudiante demo | Presente, con respuestas de ejemplo |
 
 La solución de referencia precarga estos correos con accesos rápidos en el
 login. Los nombres, correos y datos pueden adaptarse.
@@ -909,15 +924,19 @@ con esos nombres, pero suele mejorar la consistencia:
 ```text
 com.rojas.disco/
 ├── MainActivity.kt
+├── di/                (módulos Hilt: DatabaseModule, NetworkModule)
 ├── data/
 │   ├── CodigoQr.kt
 │   ├── local/
 │   │   ├── database/
 │   │   ├── entities/
 │   │   └── model/
-│   └── repository/
+│   ├── remote/        (AuthApi, TokenDataStore, TokenInterceptor, TokenAuthenticator, DTOs)
+│   │   └── model/
+│   └── repository/    (UniversidadRepository, AuthRepository)
 └── ui/
     ├── navigation/
+    ├── viewmodels/
     ├── screens/
     ├── components/
     └── theme/
@@ -988,7 +1007,9 @@ de paquetes son decisiones de implementación, no condiciones de terminado.
 - Los correos son identificadores únicos en la práctica, aunque el MVP no
   impone una restricción `UNIQUE` en la base.
 - El cuestionario es simple y de texto.
-- No se requiere autenticación segura en el MVP.
+- No se requiere autenticación segura en el MVP. **(La referencia actual sí
+  usa tokens JWT con refresh automático; la firma se valida en el servidor y
+  el cliente solo lee los claims.)**
 - La app no necesita internet para funcionar.
 - Cada solución puede tener otra arquitectura, otros nombres y otra UI; lo que
   se evalúa es el caso de uso y el cumplimiento de los flujos.
@@ -999,13 +1020,13 @@ de paquetes son decisiones de implementación, no condiciones de terminado.
 
 Ordenadas por impacto:
 
-1. **ViewModel + UiState** para sobrevivir a recreaciones y separar lógica.
-2. **Autenticación real** con contraseña o proveedor externo.
+1. **ViewModel + UiState** para sobrevivir a recreaciones y separar lógica. **(Completado.)**
+2. **Autenticación real** con contraseña o proveedor externo. **(Completado parcialmente: login con contraseña + tokens JWT + refresh automático ante 401.)**
 3. **Cuestionarios dinámicos** a partir del JSON, con modelos tipados.
-4. **Persistencia del estado de sesión**.
-5. **Inyección de dependencias** (Hilt/Koin) si crece el número de dependencias.
+4. **Persistencia del estado de sesión**. **(Parcialmente: auto-login desde tokens; el `currentUsuarioId` de la UI sigue en memoria.)**
+5. **Inyección de dependencias** (Hilt/Koin) si crece el número de dependencias. **(Completado: Hilt.)**
 6. **Reportes/exportación** de asistencias.
-7. **Sincronización remota** con backend.
+7. **Sincronización remota** con backend. **(Pendiente: solo la autenticación viaja por la API.)**
 8. **Roles adicionales** (Coordinador, Administrador) usando el modelo N:M.
 9. **Validación de email único** y normalización.
 10. **Tests automatizados** de reglas de negocio y navegación.

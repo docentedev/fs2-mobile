@@ -2,12 +2,15 @@ package com.rojas.disco.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.rojas.disco.data.local.entities.ClaseEntity
 import com.rojas.disco.data.local.entities.RolEntity
 import com.rojas.disco.data.local.entities.UsuarioEntity
 import com.rojas.disco.data.repository.AuthRepository
 import com.rojas.disco.data.repository.AuthResult
 import com.rojas.disco.data.repository.UniversidadRepository
+import com.rojas.disco.notification.NotificationService
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,7 +31,8 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val universidadRepository: UniversidadRepository
+    private val universidadRepository: UniversidadRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -82,6 +86,7 @@ class LoginViewModel @Inject constructor(
                     }
 
                     if (localUserId != null) {
+                        NotificationService.start(context, result.userInfo.email ?: email)
                         val userInfo = result.userInfo
                         val esProfesor = userInfo.isProfesor || userInfo.isAdmin
                         val esEstudiante = userInfo.isEstudiante || !esProfesor

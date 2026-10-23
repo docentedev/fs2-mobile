@@ -1,10 +1,13 @@
 package com.rojas.disco.ui.viewmodels
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rojas.disco.data.repository.AuthRepository
 import com.rojas.disco.data.repository.UniversidadRepository
+import com.rojas.disco.notification.NotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,7 +34,8 @@ sealed class SesionRestaurada {
 @HiltViewModel
 class SesionViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val universidadRepository: UniversidadRepository
+    private val universidadRepository: UniversidadRepository,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private val _sesion = MutableStateFlow<SesionRestaurada>(SesionRestaurada.Verificando)
@@ -45,14 +49,23 @@ class SesionViewModel @Inject constructor(
 
     private suspend fun restaurarSesion(): SesionRestaurada {
         val userInfo = authRepository.getUserInfo()
-            ?: return SesionRestaurada.SinSesion
+            ?: run {
+                NotificationService.stop(context)
+                return SesionRestaurada.SinSesion
+            }
 
         if (authRepository.isTokenExpired()) {
+            NotificationService.stop(context)
             return SesionRestaurada.SinSesion
         }
 
         val usuarioLocal = universidadRepository.buscarUsuarioPorEmail(userInfo.email ?: "")
-            ?: return SesionRestaurada.SinSesion
+            ?: run {
+                NotificationService.stop(context)
+                return SesionRestaurada.SinSesion
+            }
+
+        NotificationService.start(context, userInfo.email)
 
         val esProfesor = userInfo.isProfesor || userInfo.isAdmin
         return SesionRestaurada.ConSesion(

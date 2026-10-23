@@ -3,10 +3,13 @@ package com.rojas.disco.ui.viewmodels
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.content.Context
 import com.rojas.disco.data.repository.AuthRepository
 import com.rojas.disco.data.local.model.UsuarioConRoles
 import com.rojas.disco.data.repository.UniversidadRepository
+import com.rojas.disco.notification.NotificationService
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -23,6 +26,7 @@ data class ProfileUiState(
 class ProfileViewModel @Inject constructor(
     private val repository: UniversidadRepository,
     private val authRepository: AuthRepository,
+    @ApplicationContext private val context: Context,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -42,6 +46,7 @@ class ProfileViewModel @Inject constructor(
     /** Cierra la sesión: borra los tokens guardados por el login. */
     fun logout() {
         viewModelScope.launch {
+            NotificationService.stop(context)
             authRepository.logout()
         }
     }

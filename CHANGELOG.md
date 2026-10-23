@@ -14,6 +14,47 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ### Plan
 
+- [x] Revisar exhaustivamente la documentación y contrastarla con la app.
+- [x] Actualizar `docs/ARQUITECTURA.md` con las capas remotas, flujos de
+      autenticación (mermaid), auto-login y tutoriales de extensión.
+- [x] Actualizar `docs/REQUERIMIENTOS.md` para reflejar el login contra la
+      API, los datos demo reales y el alcance ampliado.
+- [x] Actualizar `docs/README.md` con el nuevo índice.
+- [x] Alinear el código con la documentación (eliminar `AppConfig` sin uso y la
+      dependencia `datastore-rxjava3` huérfana).
+- [x] Verificar compilación y ensamblado del APK.
+
+### Agregado
+
+- `docs/ARQUITECTURA.md`: capa remota (`AuthApi`, `TokenDataStore`,
+  `TokenInterceptor`, `TokenAuthenticator`, `AuthRepository`), diagramas
+  Mermaid (login, refresh ante 401, auto-login, logout), recetas/tutoriales
+  (nueva pantalla, llamada a la API, guardar en Room, DataStore) y sección de
+  configuración de la URL de la API.
+- `docs/REQUERIMIENTOS.md`: RF-01 actualizado al login con contraseña contra
+  API, RF-02 con los datos demo reales, CA-01/CA-02 actualizados, alcance
+  (3.1/3.2) y evoluciones marcadas según lo implementado.
+
+### Cambiado
+
+- Eliminado `config/AppConfig.kt` (sin uso; la URL proviene de
+  `BuildConfig.API_BASE_URL`).
+- Eliminada la dependencia `androidx.datastore:datastore-rxjava3` de
+  `app/build.gradle.kts`.
+- `docs/ARQUITECTURA.md`: estructura de directorios y mapa de archivos
+  actualizados para reflejar la capa remota y la ausencia de `config/`.
+
+### Verificación
+
+- `./gradlew :app:compileDebugKotlin` — OK.
+- `./gradlew :app:assembleDebug` — OK.
+
+---
+
+## [No lanzado] — 2026-10-23
+
+### Plan
+
 - [x] Corregir la compilación del login contra la API.
 - [x] Reescribir `TokenDataStore` con el `DataStore` de coroutines
       (la versión Rx tenía imports incorrectos y llamadas que no compilaban).
@@ -153,3 +194,80 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 - [ ] Migrar el estado de sesión a `rememberSaveable` o a un ViewModel.
 - [ ] Mover los datos demo de `LoginScreen` a un `Seeder`.
 - [ ] Eliminar el `AndroidManifest.xml` duplicado en la ruta anidada.
+
+---
+
+## [No lanzado] — 2026-10-23
+
+### Plan
+
+- [x] Agregar permisos de notificaciones y servicio en primer plano al
+      `AndroidManifest.xml`.
+- [x] Agregar `NTFY_BASE_URL` a `BuildConfig`.
+- [x] Crear `NtfyTopics` con la misma derivación SHA-256 que el backend.
+- [x] Crear `NotificationService` (foreground) que se suscribe al SSE de ntfy
+      y muestra notificaciones push.
+- [x] Iniciar el servicio al restaurar la sesión y al hacer login.
+- [x] Detener el servicio al cerrar sesión.
+- [x] Solicitar permiso `POST_NOTIFICATIONS` en Android 13+.
+- [x] Verificar compilación y tests.
+
+### Agregado
+
+- `app/src/main/java/com/rojas/disco/notification/NtfyTopics.kt`: derivación del
+  tópico secreto (`app_vibe_` + 20 hex de SHA-256 del email).
+- `app/src/main/java/com/rojas/disco/notification/NotificationService.kt`:
+  servicio foreground con canal de notificaciones, reconexión automática y
+  parseo de payloads SSE de ntfy.
+
+### Cambiado
+
+- `AndroidManifest.xml`: permisos `POST_NOTIFICATIONS`,
+  `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_DATA_SYNC` y declaración del
+  servicio.
+- `app/build.gradle.kts`: `BuildConfig.NTFY_BASE_URL`.
+- `SesionViewModel`, `LoginViewModel` y `ProfileViewModel`: inicio/detención del
+  servicio según la sesión.
+- `MainActivity.kt`: solicitud de permiso de notificaciones en Android 13+.
+
+### Verificación
+
+- `./gradlew :app:assembleDebug` — OK.
+- `./gradlew :app:testDebugUnitTest` — OK.
+
+---
+
+## [No lanzado] — 2026-10-23
+
+### Plan
+
+- [x] Corregir el parseo de la respuesta de login para desempaquetar `ApiResponse<T>`.
+- [x] Actualizar `AuthApi`, `AuthRepository` y `TokenAuthenticator`.
+- [x] Verificar compilación.
+
+### Cambiado
+
+- `AuthApi` ahora devuelve `ApiResponse<LoginResponse>` para login y refresh.
+- `AuthRepository` y `TokenAuthenticator` desempaquetan `data` antes de usar los tokens.
+
+### Verificación
+
+- `./gradlew :app:assembleDebug` — OK.
+
+---
+
+## [No lanzado] — 2026-10-23
+
+### Plan
+
+- [x] Documentar el flujo de notificaciones ntfy y cómo enviarlas.
+
+### Agregado
+
+- `docs/NOTIFICACIONES_NTFY.md`: derivación del tópico, flujo completo,
+  comandos para enviar notificaciones (backend y directo a ntfy) y
+  requisitos para que se vean en la app.
+
+### Verificación
+
+- Revisión de documentación; no se modificó código.

@@ -55,23 +55,31 @@ class TokenAuthenticator @Inject constructor(
                 return null
             }
 
-            val nuevaRespuesta = try {
+            val apiResponse = try {
                 runBlocking { refreshApi.refresh(RefreshTokenRequest(refreshToken)) }
             } catch (e: Exception) {
                 runBlocking { tokenDataStore.clearTokens() }
                 return null
             }
 
+            val nuevaRespuesta = apiResponse.data
+            if (apiResponse.success.not() || nuevaRespuesta?.accessToken.isNullOrBlank()) {
+                runBlocking { tokenDataStore.clearTokens() }
+                return null
+            }
+
+            val nuevoAccessToken = nuevaRespuesta.accessToken!!
+
             runBlocking {
                 tokenDataStore.saveTokens(
-                    accessToken = nuevaRespuesta.accessToken,
+                    accessToken = nuevoAccessToken,
                     refreshToken = nuevaRespuesta.refreshToken ?: refreshToken,
                     idToken = nuevaRespuesta.idToken
                 )
             }
 
             return response.request.newBuilder()
-                .header("Authorization", "Bearer ${nuevaRespuesta.accessToken}")
+                .header("Authorization", "Bearer $nuevoAccessToken")
                 .build()
         }
     }

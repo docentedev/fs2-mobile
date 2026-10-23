@@ -16,22 +16,29 @@ class AuthRepository @Inject constructor(
 
     suspend fun login(email: String, password: String): Result<AuthResult> {
         return try {
-            val response = authApi.login(LoginRequest(email, password))
-            
+            val apiResponse = authApi.login(LoginRequest(email, password))
+
+            if (!apiResponse.success || apiResponse.data == null) {
+                return Result.failure(Exception(apiResponse.message ?: "Error de autenticación"))
+            }
+
+            val response = apiResponse.data
+
             // Guardar tokens
             tokenDataStore.saveTokens(
-                accessToken = response.accessToken,
+                accessToken = response.accessToken ?: "",
                 refreshToken = response.refreshToken ?: "",
                 idToken = response.idToken
             )
 
             // Obtener info del usuario del idToken
             val userInfo = tokenDataStore.getUserInfo()
-            
-            if (userInfo == null) {
+
+            val accessToken = response.accessToken
+            if (userInfo == null || accessToken.isNullOrBlank()) {
                 Result.failure(Exception("No se pudo decodificar la información del usuario"))
             } else {
-                Result.success(AuthResult(userInfo, response.accessToken))
+                Result.success(AuthResult(userInfo, accessToken))
             }
         } catch (e: Exception) {
             Result.failure(e)

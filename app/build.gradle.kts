@@ -20,6 +20,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         // API Base URL configurable por buildType/flavor
         buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:8080/\"")
+        buildConfigField("String", "NTFY_BASE_URL", "\"https://ntfy.sh\"")
     }
 
     buildTypes {
@@ -86,7 +87,6 @@ dependencies {
 
     // DataStore (Tokens)
     implementation("androidx.datastore:datastore-preferences:1.1.1")
-    implementation("androidx.datastore:datastore-rxjava3:1.1.1")
 
     // JWT Decode
     implementation("com.auth0:java-jwt:4.5.0")

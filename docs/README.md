@@ -9,4 +9,5 @@
 ## Orden de lectura sugerido
 
 1. **REQUERIMIENTOS.md** para entender el producto y su alcance.
-2. **ARQUITECTURA.md** para entender cómo está construido.
+2. **ARQUITECTURA.md** para entender cómo está construido (capas, navegación,
+   persistencia, capa remota/autenticación y tutoriales de extensión).

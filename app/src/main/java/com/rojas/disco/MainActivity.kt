@@ -15,12 +15,18 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
@@ -37,6 +43,8 @@ import com.rojas.disco.ui.screens.StudentHomeScreen
 import com.rojas.disco.ui.screens.StudentQuestionnaireScreen
 import com.rojas.disco.ui.screens.TeacherHomeScreen
 import com.rojas.disco.ui.theme.DiscoTheme
+import com.rojas.disco.ui.viewmodels.SesionRestaurada
+import com.rojas.disco.ui.viewmodels.SesionViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -63,10 +71,48 @@ private data class ItemBarraNavegacion(
 
 @Composable
 fun AppNavegacion() {
+    val sesionViewModel: SesionViewModel = hiltViewModel()
+    val sesion by sesionViewModel.sesion.collectAsState()
     val navController = rememberNavController()
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
+    val destinoInicial = when (val estado = sesion) {
+        is SesionRestaurada.ConSesion -> {
+            if (estado.esEstudiante) {
+                Destino.InicioEstudiante.crearRuta(estado.usuarioId)
+            } else {
+                Destino.InicioProfesor.crearRuta(estado.usuarioId)
+            }
+        }
+        else -> Destino.Login.patron
+    }
+
+    when (sesion) {
+        is SesionRestaurada.Verificando -> {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        }
+        else -> {
+            AppNavegacionInterna(
+                navController = navController,
+                currentRoute = currentRoute,
+                destinoInicial = destinoInicial
+            )
+        }
+    }
+}
+
+@Composable
+private fun AppNavegacionInterna(
+    navController: androidx.navigation.NavHostController,
+    currentRoute: String?,
+    destinoInicial: String
+) {
     var currentUsuarioId by remember { mutableStateOf<Long?>(null) }
     var isEstudianteUser by remember { mutableStateOf(false) }
 
@@ -117,7 +163,7 @@ fun AppNavegacion() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = Destino.Login.patron,
+            startDestination = destinoInicial,
             modifier = Modifier.padding(innerPadding)
         ) {
             composableDestino(Destino.Login) {

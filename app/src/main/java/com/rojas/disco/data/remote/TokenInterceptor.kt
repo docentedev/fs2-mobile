@@ -1,7 +1,5 @@
 package com.rojas.disco.data.remote
 
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
@@ -13,12 +11,14 @@ class TokenInterceptor @javax.inject.Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
 
-        // No agregar token a la petición de login
-        if (originalRequest.url.encodedPath.contains("/auth/login")) {
+        // No agregar token a las peticiones de autenticación
+        val path = originalRequest.url.encodedPath
+        if (path.contains("/auth/login") || path.contains("/auth/refresh")) {
             return chain.proceed(originalRequest)
         }
 
-        val accessToken = withContext(Dispatchers.IO) {
+        // intercept() no es suspend; se lee el token de forma bloqueante
+        val accessToken = kotlinx.coroutines.runBlocking {
             tokenDataStore.getAccessToken()
         }
 

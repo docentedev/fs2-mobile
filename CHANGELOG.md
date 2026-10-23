@@ -10,6 +10,81 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 
 ---
 
+## [No lanzado] — 2026-10-23
+
+### Plan
+
+- [x] Corregir la compilación del login contra la API.
+- [x] Reescribir `TokenDataStore` con el `DataStore` de coroutines
+      (la versión Rx tenía imports incorrectos y llamadas que no compilaban).
+- [x] Corregir `TokenInterceptor`: usar lectura bloqueante del token dentro de
+      `intercept()`.
+- [x] Corregir el import de `LoginResponse` en `AuthRepository`.
+- [x] Corregir los imports de `KeyboardOptions`, `KeyboardActions` y
+      `PasswordVisualTransformation` en `LoginScreen`.
+- [x] Corregir la llamada nula insegura en `LoginViewModel.syncUserWithLocalDb`.
+- [x] Hacer que el logout borre los tokens guardados.
+- [x] Calificar el `Context` de `NetworkModule` con `@ApplicationContext`.
+- [x] Implementar auto-login: restaurar la sesión al iniciar la app si hay
+      tokens válidos guardados.
+- [x] Implementar renovación de tokens (`refresh`) con
+      `okhttp3.Authenticator`.
+- [x] Verificar compilación y ensamblado del APK.
+
+### Agregado
+
+- `data/remote/model/RefreshTokenRequest.kt`: cuerpo de la petición
+  `POST api/auth/refresh`.
+- `AuthApi`: agrega `refresh(RefreshTokenRequest)` sobre `api/auth/refresh`.
+- `data/remote/TokenAuthenticator.kt`: `Authenticator` de OkHttp que renueva el
+  `accessToken` al recibir un 401 (usando el `refreshToken`), reintenta la
+  petición con el nuevo token y borra los tokens si la renovación falla. Usa un
+  cliente Retrofit aparte para evitar ciclos y maneja reintentos concurrentes.
+- `ui/viewmodels/SesionViewModel.kt`: verifica al iniciar la app si hay una
+  sesión válida (token no expirado + email presente en la base local) y expone
+  `SesionRestaurada` (`Verificando` / `SinSesion` / `ConSesion`).
+- Auto-login en `MainActivity`: mientras se verifica la sesión se muestra una
+  pantalla de carga; si hay sesión se arranca directo en el home del rol
+  correspondiente y, si no, en el login.
+- `TokenInterceptor`: ya no agrega el token a las peticiones de `auth/refresh`.
+
+### Corregido
+
+- `data/remote/TokenDataStore.kt`: implementa el almacenamiento de tokens con
+  `DataStore<Preferences>` (coroutines) en lugar de la variante Rx; se conservan
+  `saveTokens`, `getAccessToken`, `getRefreshToken`, `getIdToken`, `clearTokens`,
+  `getUserInfo` e `isAccessTokenExpired`.
+- `data/remote/TokenInterceptor.kt`: remplaza `withContext` (no permitido en
+  `intercept()`) por una lectura bloqueante del token.
+- `data/repository/AuthRepository.kt`: el import de `LoginResponse` apunta a
+  `data.remote.model`.
+- `ui/screens/LoginScreen.kt`: imports de `KeyboardOptions`/`KeyboardActions`
+  (`androidx.compose.foundation.text`) y de `PasswordVisualTransformation`
+  (`androidx.compose.ui.text.input`).
+- `ui/viewmodels/LoginViewModel.kt`: `split("@")?.first()` ya no llama
+  `first()` sobre un receptor nulo.
+- `di/NetworkModule.kt`: `provideOkHttpClient` recibe un
+  `@ApplicationContext Context`.
+
+### Cambiado
+
+- `ui/viewmodels/ProfileViewModel.kt`: agrega `logout()`, que limpia los tokens
+  del `AuthRepository`.
+- `ui/screens/ProfileScreen.kt`: el botón «Cerrar Sesión» llama a
+  `viewModel.logout()` antes de navegar al login.
+
+### Verificación
+
+- `./gradlew :app:compileDebugKotlin` — OK.
+- `./gradlew :app:assembleDebug` — OK.
+
+### Pendiente
+
+- [ ] Mensajes de error amigables para respuestas HTTP (p. ej., 401 para
+      credenciales incorrectas).
+
+---
+
 ## [No lanzado] — 2026-10-22
 
 ### Plan

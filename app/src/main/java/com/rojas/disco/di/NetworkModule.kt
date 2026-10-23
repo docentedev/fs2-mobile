@@ -3,6 +3,7 @@ package com.rojas.disco.di
 import android.content.Context
 import com.rojas.disco.BuildConfig
 import com.rojas.disco.data.remote.AuthApi
+import com.rojas.disco.data.remote.TokenAuthenticator
 import com.rojas.disco.data.remote.TokenInterceptor
 import dagger.Module
 import dagger.Provides
@@ -21,8 +22,9 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
-        context: Context,
-        tokenInterceptor: TokenInterceptor
+        @dagger.hilt.android.qualifiers.ApplicationContext context: Context,
+        tokenInterceptor: TokenInterceptor,
+        tokenAuthenticator: TokenAuthenticator
     ): OkHttpClient {
         val logging = HttpLoggingInterceptor()
         logging.level = HttpLoggingInterceptor.Level.BODY
@@ -30,6 +32,7 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(logging)
             .addInterceptor(tokenInterceptor)
+            .authenticator(tokenAuthenticator)
             .build()
     }
 

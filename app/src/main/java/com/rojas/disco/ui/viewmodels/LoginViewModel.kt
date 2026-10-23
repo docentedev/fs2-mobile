@@ -138,7 +138,7 @@ class LoginViewModel @Inject constructor(
         }
 
         // Crear nuevo usuario
-        val nombre = userInfo.name ?: userInfo.email?.split("@").first() ?: "Usuario"
+        val nombre = userInfo.name ?: userInfo.email?.split("@")?.first() ?: "Usuario"
         val email = userInfo.email ?: ""
         
         val usuarioId = universidadRepository.crearUsuario(

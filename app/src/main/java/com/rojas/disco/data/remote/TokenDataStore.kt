@@ -1,26 +1,31 @@
 package com.rojas.disco.data.remote
 
 import android.content.Context
+import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.preferencesKey
-import androidx.datastore.preferences.rxjava3.RxDataStore
-import androidx.datastore.preferences.rxjava3.RxDataStoreBuilder
-import androidx.datastore.preferences.rxjava3.toMutablePreferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
 import com.auth0.jwt.JWT
 import com.auth0.jwt.interfaces.DecodedJWT
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
-import io.reactivex.rxjava3.core.Single
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import javax.inject.Singleton
-import kotlinx.coroutines.await
 
 // Claves para DataStore
 private const val TOKENS_STORE_NAME = "auth_tokens"
-private val ACCESS_TOKEN_KEY = preferencesKey<String>("access_token")
-private val REFRESH_TOKEN_KEY = preferencesKey<String>("refresh_token")
-private val ID_TOKEN_KEY = preferencesKey<String>("id_token")
+private val ACCESS_TOKEN_KEY = stringPreferencesKey("access_token")
+private val REFRESH_TOKEN_KEY = stringPreferencesKey("refresh_token")
+private val ID_TOKEN_KEY = stringPreferencesKey("id_token")
+
+private val Context.tokensDataStore: DataStore<Preferences> by preferencesDataStore(
+    name = TOKENS_STORE_NAME
+)
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -28,14 +33,13 @@ object DataStoreModule {
 
     @Provides
     @Singleton
-    fun provideTokenDataStore(@dagger.hilt.android.qualifiers.ApplicationContext context: Context): TokenDataStore {
-        val dataStore: RxDataStore<Preferences> = RxDataStoreBuilder(context, TOKENS_STORE_NAME).build()
-        return TokenDataStore(dataStore)
-    }
+    fun provideTokenDataStore(
+        @ApplicationContext context: Context
+    ): TokenDataStore = TokenDataStore(context.tokensDataStore)
 }
 
-class TokenDataStore private constructor(
-    private val dataStore: RxDataStore<Preferences>
+class TokenDataStore internal constructor(
+    private val dataStore: DataStore<Preferences>
 ) {
 
     suspend fun saveTokens(
@@ -43,35 +47,30 @@ class TokenDataStore private constructor(
         refreshToken: String,
         idToken: String?
     ) {
-        dataStore.updateDataAsync { preferences ->
-            preferences.toMutablePreferences().apply {
-                put(ACCESS_TOKEN_KEY, accessToken)
-                put(REFRESH_TOKEN_KEY, refreshToken)
-                idToken?.let { put(ID_TOKEN_KEY, it) }
+        dataStore.edit { preferences ->
+            preferences[ACCESS_TOKEN_KEY] = accessToken
+            preferences[REFRESH_TOKEN_KEY] = refreshToken
+            if (idToken != null) {
+                preferences[ID_TOKEN_KEY] = idToken
             }
-        }.await()
+        }
     }
 
-    suspend fun getAccessToken(): String? = dataStore.data
-        .map { it[ACCESS_TOKEN_KEY] }
-        .firstOrNull()
+    suspend fun getAccessToken(): String? =
+        dataStore.data.map { it[ACCESS_TOKEN_KEY] }.first()
 
-    suspend fun getRefreshToken(): String? = dataStore.data
-        .map { it[REFRESH_TOKEN_KEY] }
-        .firstOrNull()
+    suspend fun getRefreshToken(): String? =
+        dataStore.data.map { it[REFRESH_TOKEN_KEY] }.first()
 
-    suspend fun getIdToken(): String? = dataStore.data
-        .map { it[ID_TOKEN_KEY] }
-        .firstOrNull()
+    suspend fun getIdToken(): String? =
+        dataStore.data.map { it[ID_TOKEN_KEY] }.first()
 
     suspend fun clearTokens() {
-        dataStore.updateDataAsync { preferences ->
-            preferences.toMutablePreferences().apply {
-                remove(ACCESS_TOKEN_KEY)
-                remove(REFRESH_TOKEN_KEY)
-                remove(ID_TOKEN_KEY)
-            }
-        }.await()
+        dataStore.edit { preferences ->
+            preferences.remove(ACCESS_TOKEN_KEY)
+            preferences.remove(REFRESH_TOKEN_KEY)
+            preferences.remove(ID_TOKEN_KEY)
+        }
     }
 
     // Decodifica el idToken para obtener info del usuario

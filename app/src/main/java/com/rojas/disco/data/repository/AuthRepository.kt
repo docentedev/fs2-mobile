@@ -1,9 +1,9 @@
 package com.rojas.disco.data.repository
 
 import com.rojas.disco.data.remote.AuthApi
-import com.rojas.disco.data.remote.LoginResponse
 import com.rojas.disco.data.remote.TokenDataStore
 import com.rojas.disco.data.remote.model.LoginRequest
+import com.rojas.disco.data.remote.model.LoginResponse
 import com.rojas.disco.data.remote.UserInfo
 import dagger.hilt.android.scopes.ViewModelScoped
 import javax.inject.Inject
